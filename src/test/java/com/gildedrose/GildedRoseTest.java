@@ -449,5 +449,75 @@ public class GildedRoseTest {
         assertEquals(-2, app.items[0].sellIn);
         assertEquals(6, app.items[0].quality, "Conjured should degrade by 4 post-expiry");
     }
+
+
+    // 1) Aged Brie – trailing typo ("Aged Briee") should resolve to Brie
+    @Test @Tag("fuzzy") @DisplayName("Fuzzy: 'Aged Briee' -> Brie (+1)")
+    void fuzzy_brie_trailing_typo() {
+        Item[] items = { new Item("Aged Briee", 2, 10) };
+        GildedRose app = new GildedRose(items);
+
+        app.updateQuality();
+        assertEquals(1, items[0].sellIn);
+        assertEquals(11, items[0].quality, "Expected Brie growth +1 via fuzzy match");
+    }
+
+    // 2) Aged Brie – diacritics & punctuation & spacing ("Âgéd   Brîe!!") should resolve to Brie and clamp at 50
+    @Test @Tag("fuzzy") @DisplayName("Fuzzy: 'Âgéd   Brîe!!' -> Brie (cap at 50)")
+    void fuzzy_brie_diacritics_and_punct() {
+        Item[] items = { new Item("Âgéd   Brîe!!", 1, 49) };
+        GildedRose app = new GildedRose(items);
+
+        app.updateQuality();
+
+        assertEquals(0, items[0].sellIn);
+        assertEquals(50, items[0].quality, "Quality must be capped at 50");
+    }
+
+    // 3) Sulfuras – missing comma/extra spacing should still resolve to Sulfuras (no changes at all)
+    @Test @Tag("fuzzy") @DisplayName("Fuzzy: 'Sulfuras Hand of Ragnaros' -> Sulfuras (no-op)")
+    void fuzzy_sulfuras_missing_comma() {
+        Item[] items = { new Item("Sulfuras Hand of Ragnaros", 5, 80) };
+        GildedRose app = new GildedRose(items);
+
+        app.updateQuality();
+        assertEquals(5, items[0].sellIn, "Sulfuras sellIn should not change");
+        assertEquals(80, items[0].quality, "Sulfuras quality should remain 80");
+    }
+
+    // 4) Backstage – minor typo should still resolve; threshold day (=10) gives +2 but capped at 50
+    @Test @Tag("fuzzy") @DisplayName("Fuzzy: 'Backstage passes to a TAFKAL80ETC concerrt' -> Backstage (+2, cap 50)")
+    void fuzzy_backstage_minor_typo() {
+        Item[] items = { new Item("Backstage passes to a TAFKAL80ETC concerrt", 10, 49) }; // 'concert' -> 'concerrt'
+        GildedRose app = new GildedRose(items);
+
+        app.updateQuality();
+        assertEquals(9, items[0].sellIn);
+        assertEquals(50, items[0].quality, "Should increase by +2 but cap at 50");
+    }
+
+    // 6) Case-insensitivity & spacing: "aged   brie" should resolve to Brie via normalization
+    @Test @Tag("fuzzy") @DisplayName("Fuzzy: 'aged   brie' (lower & extra spaces) -> Brie (+1)")
+    void fuzzy_brie_case_and_spaces() {
+        Item[] items = { new Item("aged   brie", 2, 7) };
+        GildedRose app = new GildedRose(items);
+
+        app.updateQuality();
+
+        assertEquals(1, items[0].sellIn);
+        assertEquals(8, items[0].quality);
+    }
+
+    // 7) Negative case: below-threshold similarity should fall back to Normal (not Brie)
+    @Test @Tag("fuzzy") @DisplayName("Fuzzy: 'Brine' should NOT match Brie -> Normal (-1)")
+    void fuzzy_negative_below_threshold_falls_back_to_normal() {
+        Item[] items = { new Item("Brine", 5, 10) }; // intentionally not close enough
+        GildedRose app = new GildedRose(items);
+
+        app.updateQuality();
+
+        assertEquals(4, items[0].sellIn);
+        assertEquals(9, items[0].quality, "Should behave like Normal (degrade -1), not Brie");
+    }
 }
 
