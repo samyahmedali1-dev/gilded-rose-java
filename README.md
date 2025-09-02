@@ -106,11 +106,10 @@ We refactored `UpdateQuality` into a small, testable architecture using **Strate
 ---
 ### 3. Decorator Pattern — add cross-cutting behaviour to policies
 
-**What:** Concrete **decorators** implement  **wrap** a delegate `UpdatePolicy` instance. Each decorator adds a single cross-cutting concern (e.g. logging, validation, metrics) and forwards the call to its delegate.
+**What:** Concrete **decorators** implement  **wrap** a delegate `UpdatePolicy` instance.
 
 **Why:** Keeps domain policies (e.g. `DegradingPolicy`, `BackstagePolicy`) focused on business rules while allowing orthogonal features to be composed without modifying core logic. This preserves single responsibility, improves testability, and enables runtime composition/configuration of behaviour.
 
-**Behaviour:** Decorators are composed at the assembly/factory/DI boundary. Order matters — for example, validation typically runs **before** the core policy, metrics may measure the core execution, and logging often wraps outermost to capture before/after state. The factory returns either a decorated `UpdatePolicy` (e.g. `Logging(Metrics(Validation(Core)))`) or the undecorated core when features are disabled.
 
 ---
 
