@@ -104,12 +104,17 @@ We refactored `UpdateQuality` into a small, testable architecture using **Strate
 **Behaviour:** exact matches first (fast), then fuzzy matching only when necessary.
 
 ---
-
 ### 3. Decorator Pattern — add cross-cutting behaviour to policies
 
-**What:** Concrete decorator implement the same `UpdatePolicy` interface and **wrap** a delegate `UpdatePolicy` instance. 
-**Why:** keeps domain policies (e.g. `DegradingPolicy`, `BackstagePolicy`) focused on business rules while allowing orthogonal features to be composed without modifying core logic. This preserves single-responsibility, improves testability, and enables runtime composition/configuration of behaviour.
+**What:** Concrete **decorators** implement  **wrap** a delegate `UpdatePolicy` instance. Each decorator adds a single cross-cutting concern (e.g. logging, validation, metrics) and forwards the call to its delegate.
+
+**Why:** Keeps domain policies (e.g. `DegradingPolicy`, `BackstagePolicy`) focused on business rules while allowing orthogonal features to be composed without modifying core logic. This preserves single responsibility, improves testability, and enables runtime composition/configuration of behaviour.
+
+**Behaviour:** Decorators are composed at the assembly/factory/DI boundary. Order matters — for example, validation typically runs **before** the core policy, metrics may measure the core execution, and logging often wraps outermost to capture before/after state. The factory returns either a decorated `UpdatePolicy` (e.g. `Logging(Metrics(Validation(Core)))`) or the undecorated core when features are disabled.
+
 ---
+
+
 
 ### 4. Small utilities
 - **QualityClamp** — single place for `0..50` (except Sulfuras).
@@ -132,4 +137,45 @@ We refactored `UpdateQuality` into a small, testable architecture using **Strate
    - Prefer exact > substring > fuzzy.
    - If multiple fuzzy candidates, select highest score and apply precedence (Sulfuras > Backstage > AgedBrie > Conjured > Normal).
 6. **Fallback** to `NormalStrategy`.
+
+
+
+
+## How we applied SOLID principles — rationale & implementation
+
+
+### S — Single Responsibility Principle (SRP)
+1. **Idea:** each class has one reason to change.
+2. **What we did:**
+   - Policy classes implement single business rules (`DegradingPolicy`, `BackstagePolicy`, `AgedBriePolicy`, `SulfurasPolicy`).
+   - `ItemStrategyFactory` only resolves & composes policies.
+
+
+### O — Open/Closed Principle (OCP)
+
+**Idea:** open for extension, closed for modification.
+
+**What we did:**
+- Add behavior by creating new `UpdatePolicy` implementations or decorators; existing classes remain unchanged.
+- `ItemStrategyFactory` wires new strategies via registration/config (factory registration or DI), not by editing existing policy internals.
+
+**Result:** add `ConjuredPolicy` by creating a class and wiring it — no edits to existing code.
+
+---
+
+### L — Liskov Substitution Principle (LSP)
+
+---
+
+### I — Interface Segregation Principle (ISP)
+
+---
+
+### D — Dependency Inversion Principle (DIP)
+
+**Idea:** depend on abstractions, not concretes.
+
+**What we did:**
+- All composition is done against the `UpdatePolicy` abstraction; factories and decorators accept dependencies via constructor injection.
+- Tests can replace concrete implementations with mocks or fakes easily.
 
