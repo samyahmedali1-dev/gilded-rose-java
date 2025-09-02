@@ -1,8 +1,5 @@
 # Gilded Rose — Inventory Rules (Updated)
 
-> This README describes the Gilded Rose inventory system **after** adding the **Conjured** item behavior.
-> Use this as the canonical reference for `UpdateQuality` logic, tests, and examples.
-
 ---
 
 ## Summary
@@ -74,13 +71,10 @@ Each item has:
 
 # Design Patterns & Fuzzy Matching — Implementation Notes
 
-> Polished, high-quality summary you can paste into `README.md` or a `DESIGN.md`.  
-> Explains which design patterns were applied, why we chose them, how they’re implemented, and the fuzzy-matching approach used to detect item types.
-
 ---
 
 ## Overview
-We refactored `UpdateQuality` into a small, testable architecture using **Strategy**, **Factory**, and a **Template Method** style base class, supported by small utilities (clamping, logging, normalization). This makes behavior extensible, readable, and easy to unit-test, while a conservative fuzzy-matching layer preserves backward compatibility with name-based item inputs.
+We refactored `UpdateQuality` into a small, testable architecture using **Strategy**, **Factory**, and a **Decorator** style base class, supported by small utilities (clamping, logging, normalization). This makes behavior extensible, readable, and easy to unit-test, while a conservative fuzzy-matching layer preserves backward compatibility with name-based item inputs.
 
 ---
 
